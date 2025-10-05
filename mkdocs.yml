@@ -2,9 +2,10 @@ site_name: Jianping Meng
 site_description: Jianping Meng's Personal Website
 site_author: Jianping Meng
 site_url: https://jpmeng.github.io
-# repo settings for "Edit on GitHub" link
+# repo settings for "Edit this page" link
+edit_uri: edit/main/docs/ #  define the branch and the folder of the docs for  "Edit this page" link
 repo_name: jpmeng.github.io
-repo_url: https://github.com/jpmeng/jpmeng.github.io.git
+repo_url: https://github.com/jpmeng/jpmeng.github.io
 
 
 # Copyright

@@ -1,6 +1,19 @@
 site_name: Jianping Meng
+site_description: Jianping Meng's Personal Website
+site_author: Jianping Meng
+site_url: https://jpmeng.github.io
+# repo settings for "Edit on GitHub" link
+repo_name: jpmeng.github.io
+repo_url: https://github.com/jpmeng/jpmeng.github.io.git
+
+
+# Copyright
+copyright: Jianping Meng <a href='https://creativecommons.org/licenses/by/4.0/' target='_blank'>CC-BY-4.0</a>
+
+
 theme:
   name: material
+  language: en
   highlightjs: true
   hljs_languages:
     - yaml
@@ -10,27 +23,59 @@ theme:
     - Fortran
     - Bash
   features:
-    - content.code.copy
-    - content.action.edit
+    - navigation.tabs  #  Enable horizontal tabs
+    - navigation.tabs.sticky  # Make the horizontal tabs sticky
+    - navigation.indexes # blog need
+    - navigation.instant  # https://squidfunk.github.io/mkdocs-material/setup/setting-up-navigation/#instant-loading
+    - navigation.sections  # Automatic section navigation
+    - navigation.top  # Back to top button
+    - navigation.prune
+    - toc.integrate  # Integrate the table of contents in the sidebar
+    - search.suggest  # Enable search suggestions
+    - content.code.copy # Enable code copy button
+    - content.action.edit # Enable "Edit this page" link
+    - content.action.view # Enable "View source of this page" link
+    - content.code.annotate
+    - content.tooltips # see https://squidfunk.github.io/mkdocs-material/reference/tooltips/?h=tooltip
+    # - header.autohide
+    # - navigation.expand
+    - navigation.footer
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - toc.follow
+
 
   # This enables choice of light/dark mode
   palette:
-    # Palette toggle for light mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/link
+        name: Switch to light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      primary: indigo
+      accent: indigo
       toggle:
-        icon: material/brightness-7
+        icon: material/toggle-switch
         name: Switch to dark mode
-
-    # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: black
+      accent: indigo
       toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+        icon: material/toggle-switch-off
+        name: Switch to system preference
+  font:
+    text: Roboto
+    code: Roboto Mono
+  #logo: images/logo.png
+
 
 
 markdown_extensions:
+  - toc:
+      permalink: true # This adds a link icon next to each header
   - pymdownx.arithmatex:
       generic: true
   - pymdownx.highlight:
@@ -45,10 +90,26 @@ markdown_extensions:
   - def_list
   - pymdownx.tasklist:
       custom_checkbox: true
+  - admonition
+  - footnotes # see https://squidfunk.github.io/mkdocs-material/reference/footnotes/?h=footnotes#fn:1
 plugins:
-  # This needs mkdocs-pdf
-  - mkdocs-pdf
+  - mkdocs-pdf  # This needs mkdocs-pdf
+  #- typeset # must be insider version
+  - minify: # This needs mkdocs-minify-plugin
+      minify_html: true
+
   - search
+  - blog:
+      pagination_per_page: 5   # https://squidfunk.github.io/mkdocs-material/plugins/blog/?h=pagination+per+page#config.pagination_per_page
+      blog_toc: true           #
+      post_excerpt: required   # https://squidfunk.github.io/mkdocs-material/plugins/blog/?h=pagination+per+page#config.post_excerpt
+
+  # The following plugin enables the sidebar toggle button
+  #  - toggle-sidebar: # This needs mkdocs-toggle-sidebar-plugin
+  #     toggle_button: navigation
+  #     show_navigation_by_default: true
+  #     show_toc_by_default: true
+
   # This needs mkdocs-git-revision-date-localized-plugin
   - git-revision-date-localized:
       enable_creation_date: true
@@ -59,9 +120,8 @@ extra_javascript:
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
+# Navigation structure
 nav:
-  - Home: index.md
-
-
-
-
+  - About : aboutme.md
+  - Technical Notes:
+    - blog/index.md

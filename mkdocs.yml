@@ -100,6 +100,7 @@ plugins:
       minify_html: true
 
   - search
+  - tags
   - blog:
       pagination_per_page: 5   # https://squidfunk.github.io/mkdocs-material/plugins/blog/?h=pagination+per+page#config.pagination_per_page
       blog_toc: true           #

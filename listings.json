@@ -1,0 +1,25 @@
+[
+  {
+    "listing": "/Posts.html",
+    "items": [
+      "/posts/20260329_SubtleNetworkIssue.html",
+      "/posts/20260119_HowToDeploy2FAUsingGoogleAuthenticatorOnRockyLinux.html",
+      "/posts/20251223_NextCloudContainerDeployment.html",
+      "/posts/20251019_Rockylinux10FirstInstallation.html",
+      "/posts/20251011_BashHistoryTimestamp.html"
+    ]
+  },
+  {
+    "listing": "/virtualcluster.html",
+    "items": [
+      "/virtualcluster/20260502_virtualHPC_concepts.html",
+      "/virtualcluster/20260502_virtualHPC_generalVM.html"
+    ]
+  },
+  {
+    "listing": "/Cudacpp.html",
+    "items": [
+      "/cudacpp/20260331_bridge.html"
+    ]
+  }
+]

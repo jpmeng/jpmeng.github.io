@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>💻 jpmeng</title>
+<link>https://jpmeng.github.io/virtualcluster.html</link>
+<atom:link href="https://jpmeng.github.io/virtualcluster.xml" rel="self" type="application/rss+xml"/>
+<description>Jianping Meng&#39;s Personal Website</description>
+<generator>quarto-1.9.37</generator>
+<lastBuildDate>Mon, 04 May 2026 21:01:03 GMT</lastBuildDate>
+<item>
+  <title>Concepts of virtualisation</title>
+  <dc:creator>Jianping Meng</dc:creator>
+  <link>https://jpmeng.github.io/virtualcluster/20260502_virtualHPC_concepts.html</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="layers-of-virtualisation" class="level2">
+<h2 class="anchored" data-anchor-id="layers-of-virtualisation">Layers of virtualisation</h2>
+<p>There are several layers of virtualisation. Bare Metal is the hardware. A Hypervisor is the software that manages that hardware for VMs. Type 1 (ESXi, KVM, Hyper-V) sits directly on the hardware for maximum speed. Type 2 (VirtualBox) sits on an OS for convenience. QEMU is the “utility player”—it provides the virtual hardware (keyboard/disk) to KVM, or acts as a standalone (but slow) emulator.</p>
+<ul>
+<li><p>Bare Metal: The raw, physical hardware (CPU, RAM, Disk). It’s the “metal” server rack with nothing installed on it yet.</p></li>
+<li><p>Hypervisor: The manager. It’s the software layer that sits on the hardware to create and run Virtual Machines (VMs). It’s the “boss” that decides how much RAM each VM gets.</p>
+<p>There are two types of hypervisors: Type 1 and Type 2.</p>
+<p>Type 1 hypervisors boot directly on the physical server to run multiple virtual machines at maximum efficiency.</p>
+<p>They include:</p>
+<ul>
+<li><p>VMware ESXi: It is its own tiny operating system. When the computer turns on, ESXi loads first, then starts your VMs. There is no “middleman.”</p></li>
+<li><p>Microsoft Hyper-V: This is a “stealth” Type 1. When you enable Hyper-V on Windows, it actually slides underneath your Windows OS. Windows itself becomes a “special VM” (management partition), giving Hyper-V direct control of the hardware.</p></li>
+</ul>
+<p>KVM: It converts the Linux Kernel into the hypervisor. Since the Kernel owns the hardware, KVM operates at the lowest possible level.</p>
+<p>Type 2 hypervisors run as an application on top of an existing OS. You use your computer normally, open the hypervisor software, and launch a VM inside a window. Such hypervisors typically include Oracle VirtualBox and VMware Workstation. They are easy to set up and use, while their performance is lower than Type 1 ones in principle.</p>
+<p>QEMU is a special one: if working with KVM, it is a part of a Type 1 hypervisor setup, but it can also work alone, which acts as an emulator. When working with KVM, it emulates “extra” hardware the VM needs (like a mouse, keyboard, or disk drive) that isn’t handled by the KVM engine.</p></li>
+<li><p>Guest virtual machine: An independent software instance of an operating system that runs on top of a hypervisor.</p></li>
+<li><p>Container Engine (Docker/containerd/Apptainer/podman): Runs on the Guest VM (or bare metal) to host containers.</p>
+<p>Think of a VM like a standalone house—it has its own plumbing, heating, and infrastructure. A container is like an apartment in a building—it has its own front door and space, but it shares the building’s main infrastructure (the OS).</p>
+<p>Virtual Machines: Each VM includes a full copy of an operating system (OS), the application, and necessary drivers. They run on a “hypervisor” that mimics hardware, making them heavy and slow to start, but very secure and isolated.</p>
+<p>Containers: Containers share the host’s OS kernel and only package the application and its dependencies. This makes them incredibly lightweight, fast to boot, and highly portable across different environments.</p>
+<p>Containers can be created and run inside a VM.</p></li>
+</ul>
+</section>
+<section id="management" class="level2">
+<h2 class="anchored" data-anchor-id="management">Management</h2>
+<p>There are also tools for managing virtual machines and containers. Locally, there are libvirt (KVM) and VBoxManage (VirtualBox) for dealing with virtual machines, and Docker CLI, Apptainer CLI, and Podman CLI for dealing with containers. Apart from them, there are also higher-level management tools like OpenStack for managing many virtual machines and K8s for containers.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>Virtualisation</category>
+  <category>Virtual machine</category>
+  <category>Container</category>
+  <category>Hypervisor</category>
+  <category>Management</category>
+  <guid>https://jpmeng.github.io/virtualcluster/20260502_virtualHPC_concepts.html</guid>
+  <pubDate>Mon, 04 May 2026 21:01:03 GMT</pubDate>
+</item>
+<item>
+  <title>How to create a virtual machine using qemu+kvm</title>
+  <dc:creator>Jianping Meng</dc:creator>
+  <link>https://jpmeng.github.io/virtualcluster/20260502_virtualHPC_generalVM.html</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="host-environment-setup" class="level2">
+<h2 class="anchored" data-anchor-id="host-environment-setup">Host environment setup</h2>
+<p>To create virtual machines using qemu+kvm under Rocky Linux, we need to install the necessary packages and set up the environment.</p>
+<p>First, we need to install the required packages and start the libvirt service:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sudo</span> dnf install <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-y</span> virt-install libvirt qemu-kvm libguestfs-tools</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sudo</span> systemctl enable <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--now</span> libvirtd</span></code></pre></div></div>
+<p>If a personal computer is used, probably not much space is allocated for the /var directory, which is the default location for storing virtual machine images. To avoid running out of space, we can create a directory under /home to store the images and give libvirt/qemu permission to access it:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">cd</span> /home</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sudo</span> mkdir vms</span>
+<span id="cb2-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sudo</span> chown <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$USER</span>:<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$USER</span> vms</span>
+<span id="cb2-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sudo</span> chmod 711 vms</span>
+<span id="cb2-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># tell selinux to allow libvirt to access the directory and files therein</span></span>
+<span id="cb2-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sudo</span> semanage fcontext <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-a</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-t</span> virt_image_t <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"/home/vms(/.*)?"</span></span>
+<span id="cb2-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># apply the new context to the existing files and directories</span></span>
+<span id="cb2-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sudo</span> restorecon <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-R</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-v</span> /home/vms</span></code></pre></div></div>
+<p>Through my test, 711 is minimum permission for the directory /home/vms to allow libvirt to access it. If it is 700, libvirt will complain about permission denied when trying to access the image file in that directory.</p>
+<p>For convenience, we can make our own user a member of the libvirt group [1], so that we can manage virtual machines without sudo:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sudo</span> usermod <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-a</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-G</span> libvirt <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$USER</span></span></code></pre></div></div>
+<p>To ensure that the new group membership is effective, we can log out and log back in.</p>
+<p>We also need to set the LIBVIRT_DEFAULT_URI environment variable to point to the system-wide libvirt instance <code>qemu:///system</code>. Otherwise, the default is <code>qemu:///session</code> pointing to the user session.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">export</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">LIBVIRT_DEFAULT_URI</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"qemu:///system"</span></span></code></pre></div></div>
+<p>We can add the above line to our shell profile (e.g., <code>~/.bashrc</code> or <code>~/.zshrc</code>) to make it permanent.</p>
+</section>
+<section id="network-setup" class="level2">
+<h2 class="anchored" data-anchor-id="network-setup">Network setup</h2>
+<p>Next, we need to prepare the network for the virtual machines. By default, libvirt provides a NATed network called “default”. We can start it and set it to autostart:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">virsh</span> net-start default</span>
+<span id="cb5-2"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">virsh</span> net-autostart default</span></code></pre></div></div>
+<p>If somehow the default network is not available, we can create it using the default XML configuration file provided by libvirt:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">virsh</span> net-define /usr/share/libvirt/networks/default.xml</span></code></pre></div></div>
+<p>At this moment it is sufficient to use the default network for our virtual machines. For more advanced network configuration, please refer to the official documentation [2-3].</p>
+</section>
+<section id="image-preparation" class="level2">
+<h2 class="anchored" data-anchor-id="image-preparation">Image preparation</h2>
+<p>To prepare the image for the virtual machine, we could take advantage of the cloud image provided by <a href="https://rockylinux.org/download">Rocky Linux</a>, which is a qcow2 image with cloud-init pre-installed.</p>
+<p>We can then utilise the <code>virt-customize</code> tool to customize the image, such as setting the password for the root user, creating a test user, and resizing the image to have enough space for the root partition. Below is an example of how to do this:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># let virt-customize access the image file directly without using libvirt, which is faster and more efficient</span></span>
+<span id="cb7-2"><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">VM_NAME</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$1</span></span>
+<span id="cb7-3"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">export</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">LIBGUESTFS_BACKEND</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>direct</span>
+<span id="cb7-4"><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">IMAGE_DIR</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"/home/vms"</span></span>
+<span id="cb7-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># assumming the cloud image is already downloaded to $IMAGE_DIR, and its name is Rocky-9-GenericCloud-Base.latest.x86_64.qcow2</span></span>
+<span id="cb7-6"><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">IMAGE</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$IMAGE_DIR</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2"</span></span>
+<span id="cb7-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cp</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$IMAGE</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$IMAGE_DIR</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">/</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$VM_NAME</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">.qcow2"</span></span>
+<span id="cb7-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Resize the image to 40G to have enough space for the root partition</span></span>
+<span id="cb7-9"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">qemu-img</span> resize <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$IMAGE_DIR</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">/</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$VM_NAME</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">.qcow2"</span> 40G</span>
+<span id="cb7-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Customize the image</span></span>
+<span id="cb7-11"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Replace TESTUSER and TESTUSERPASSWORD with your own username and password for the test user</span></span>
+<span id="cb7-12"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># The root user will be locked and cannot be used to log in</span></span>
+<span id="cb7-13"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">virt-customize</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-a</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$IMAGE_DIR</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">/</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$VM_NAME</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">.qcow2"</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb7-14">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--run-command</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"passwd -l root"</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb7-15">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--run-command</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"usermod -L root"</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb7-16">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--edit</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'/etc/passwd: s/^root:x:0:0:root:\/root:\/bin\/bash/root:x:0:0:root:\/root:\/sbin\/nologin/'</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb7-17">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--hostname</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$VM_NAME</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb7-18">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--password</span> TESTUSER:password:TESTUSERPASSWORD <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb7-19">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--run-command</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"useradd -m -G wheel TESTUSER"</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb7-20">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--edit</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'/etc/default/grub: s/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"console=tty0 console=ttyS0,115200n8 /'</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb7-21">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--run-command</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"grub2-mkconfig -o /boot/grub2/grub.cfg"</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb7-22">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--run-command</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'growpart /dev/sda 4 || growpart /dev/sda 3'</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb7-23">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--run-command</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'xfs_growfs /'</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb7-24">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--uninstall</span> cloud-init <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span></code></pre></div></div>
+<p>In the <code>virt-customize</code> command, the arguments</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">--edit</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'/etc/default/grub: s/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"console=tty0 console=ttyS0,115200n8 /'</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb8-2">--run-command <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"grub2-mkconfig -o /boot/grub2/grub.cfg"</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span></code></pre></div></div>
+<p>are used to enable the serial console, which is necessary for us to access the virtual machine through the serial console later.</p>
+<p>The argument</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">--run-command</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'growpart /dev/sda 4 || growpart /dev/sda 3'</span></span></code></pre></div></div>
+<p>tries to grow the partition 4 of the disk /dev/sda, which is the root partition in the cloud image. If it fails (e.g., because there are only 3 partitions), it will try to grow partition 3 instead.</p>
+</section>
+<section id="virtual-machine-creation" class="level2">
+<h2 class="anchored" data-anchor-id="virtual-machine-creation">Virtual machine creation</h2>
+<p>To create the virtual machine, we can use the <code>virt-install</code> command. Below is an example of how to do this:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">export</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">LIBGUESTFS_BACKEND</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>direct</span>
+<span id="cb10-2"><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">VM_NAME</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$1</span></span>
+<span id="cb10-3"><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">IMAGE_NAME</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$2</span></span>
+<span id="cb10-4"><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">IMAGE_DIR</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"/home/vms"</span></span>
+<span id="cb10-5"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">virt-install</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-6">--name <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$VM_NAME</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-7">--ram 4096 <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-8">--vcpus 2 <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-9">--cpu host-passthrough <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-10">--os-variant rocky9 <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-11">--disk path=<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$IMAGE_DIR</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">/</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$VM_NAME</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">.qcow2"</span>,bus=virtio <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-12">--network network=default <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-13">--import <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-14">--graphics none <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-15">--boot uefi <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-16">--serial pty <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-17">--console pty,target_type=serial <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb10-18">--noautoconsole</span></code></pre></div></div>
+<p>In this example, 4GB of RAM and 2 vCPUs are allocated to the virtual machine.</p>
+<p>After creation, if you would like to remove the virtual machine, you can use the <code>virsh undefine</code> command:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">virsh</span> undefine <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$VM_NAME</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--remove-all-storage</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--nvram</span></span></code></pre></div></div>
+<p>To do this, you need to make sure that the virtual machine is shut down first</p>
+</section>
+<section id="daily-operation" class="level2">
+<h2 class="anchored" data-anchor-id="daily-operation">Daily operation</h2>
+<p>To show the console of the virtual machine, we can use the <code>virsh console</code> command:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">virsh</span> console <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$VM_NAME</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span></span></code></pre></div></div>
+<p>To shut down the virtual machine, we can use the <code>virsh shutdown</code> command:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">virsh</span> shutdown <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">$VM_NAME</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span></span></code></pre></div></div>
+<section id="references" class="level3">
+<h3 class="anchored" data-anchor-id="references">References</h3>
+<p>[1] <a href="https://docs.rockylinux.org/10/guides/virtualization/libvirt-rocky/">Setting Up libvirt on Rocky Linux - RockyLinux</a></p>
+<p>[2] <a href="https://libvirt.org/formatnetwork.html">Network XML format - libvirt</a></p>
+<p>[3] <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-managing_guest_virtual_machines_with_virsh-managing_virtual_networks">Managing Virtual Networks- RedHat</a></p>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>Virtual machine</category>
+  <category>KVM</category>
+  <category>QEMU</category>
+  <category>libvirt</category>
+  <category>Rocky Linux</category>
+  <guid>https://jpmeng.github.io/virtualcluster/20260502_virtualHPC_generalVM.html</guid>
+  <pubDate>Mon, 04 May 2026 21:01:03 GMT</pubDate>
+</item>
+</channel>
+</rss>
